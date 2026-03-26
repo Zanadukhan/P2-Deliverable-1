@@ -1,0 +1,67 @@
+PART 3 - MODEL BUILDING
+========================
+
+What we did:
+- Split the data 80/20 — 64,930 rows for training, 16,233 for testing.
+- Trained 4 regression models with default settings (no tuning): Linear Regression, Decision Tree, Random Forest, and SVR.
+- All models used the same training and test data so the comparison is fair.
+
+Why 80/20 split:
+- We have 81K rows. 80% gives enough data to train on, 20% is still ~16K rows which is plenty to test on.
+
+Why default settings:
+- This is baseline performance. We want to see how each model does out of the box before tuning anything.
+
+Results:
+- Random Forest did best (Adj R² = 0.2623, MAE = $19,099)
+- Linear Regression came second (Adj R² = 0.2353, MAE = $21,228)
+- Decision Tree was third (Adj R² = 0.1412, MAE = $20,496)
+- SVR was worst — negative R², meaning it's worse than just guessing the average income
+
+
+PART 4 - MODEL EVALUATION AND INTERPRETATION
+==============================================
+
+Why we picked these metrics:
+
+1. Adjusted R² (main metric)
+   - Tells us what % of income variation the model explains.
+   - We used Adjusted R² instead of regular R² because regular R² goes up every time you add a feature, even if that feature is useless. Adjusted R² penalizes you for adding bad features. Since we have 11 features, this matters.
+
+2. RMSE
+   - Average error in dollars, but big mistakes count more.
+   - Useful because income data has outliers (people earning $200K+).
+
+3. MAE
+   - Average error in dollars, all mistakes count the same.
+   - RMSE is ~$37K but MAE is ~$19K for Random Forest. The big gap means outliers (high earners) are pulling the error up.
+
+Why each model did what it did:
+
+Random Forest (best):
+- Builds 100 decision trees and averages them.
+- Captures patterns like "university-educated people in their 40s earn more" without overfitting.
+- Averaging many trees smooths out the noise that hurts a single Decision Tree.
+
+Linear Regression (second):
+- Draws a straight line through the data.
+- Works okay because features like education and age generally go up with income.
+- Can't capture combinations of features (e.g., education matters more at certain ages).
+
+Decision Tree (third):
+- One tree with no depth limit — it memorizes the training data.
+- Overfits: does great on training data, bad on test data.
+- With default settings it goes too deep and learns noise instead of real patterns.
+
+SVR (worst, negative R²):
+- Negative R² means it's worse than just predicting the average for everyone.
+- SVR uses distances between data points to make predictions.
+- Our features aren't scaled — age group ranges from 1-17, province from 10-62. SVR treats these distances as meaningful when they're not.
+- Without scaling, SVR can't work properly. This is expected at default settings.
+
+Why is R² only 0.26?
+
+- Our features are all broad categories (age group, education level, province, etc.)
+- Two people in the same age group with the same education can earn very different incomes depending on their job, industry, and hours worked.
+- Those specific predictors (occupation, industry, hours) are not in this dataset.
+- 0.26 from demographics alone is normal — it means demographics explain about 26% of why people earn different amounts. The rest depends on factors we don't have.
